@@ -4,8 +4,9 @@ namespace GPack
 {
     public class BlockingQueue
     {
-        private int _queueSize;
-        private ByteBlock[] _buffer;
+        private readonly int _queueSize;
+        private readonly int _mask;
+        private readonly ByteBlock[] _buffer;
 
         private long _queueHead;
         private long _queueTail;
@@ -16,8 +17,9 @@ namespace GPack
 
         public BlockingQueue()
         {
-            _queueSize = Constants.DEFAULT_BUFFER_SIZE;
-            _buffer = new ByteBlock[Constants.DEFAULT_BUFFER_SIZE];
+            _queueSize = GetPowerOfTwo(Constants.DEFAULT_BUFFER_SIZE);
+            _mask = _queueSize - 1;
+            _buffer = new ByteBlock[_queueSize];
         }
 
         public bool TryEnqueue(ByteBlock block)
@@ -33,7 +35,7 @@ namespace GPack
                 }
                 else if (tail == Interlocked.CompareExchange(ref _queueTail, tail + 1, tail))
                 {
-                    var index = tail % _queueSize;
+                    var index = tail & _mask;
                     _buffer[index] = block;
                    
                     return true;
@@ -58,7 +60,7 @@ namespace GPack
                 }
 
                 var buffer = _buffer;
-                var index = head % _queueSize;
+                var index = head & _mask;
                 block = buffer[index];
                 if (block != null && head == Interlocked.CompareExchange(ref _queueHead, head + 1, head))
                 {
@@ -73,6 +75,17 @@ namespace GPack
         public void Complete()
         {
             IsDataReceptionCompleted = true;
+        }
+
+        private int GetPowerOfTwo(int x)
+        {
+            x = x - 1;
+            x = x | (x >> 1);
+            x = x | (x >> 2);
+            x = x | (x >> 4);
+            x = x | (x >> 8);
+            x = x | (x >> 16);
+            return x + 1;
         }
     }
 }
