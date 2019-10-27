@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 
 namespace GPack
 {
@@ -17,7 +18,7 @@ namespace GPack
 
         public BlockingQueue()
         {
-            _queueSize = GetPowerOfTwo(Constants.DEFAULT_BUFFER_SIZE);
+            _queueSize = Math.Max(1 << 16, GetPowerOfTwo(Constants.DEFAULT_BUFFER_SIZE);
             _mask = _queueSize - 1;
             _buffer = new ByteBlock[_queueSize];
         }
