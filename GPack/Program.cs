@@ -31,7 +31,7 @@ namespace GPack
         private static int CompressCommand(Compress opts)
         {
             var stopwatch = Stopwatch.StartNew();
-            if (CheckPaths(opts.Source, opts.Target))
+            if (CheckSourcePath(opts.Source))
             {
                 var compressor = new Compressor(_cts.Token);
                 TokenRegistration(compressor.InnerToken);
@@ -54,7 +54,7 @@ namespace GPack
         private static int DecompressCommand(Decompress opts)
         {
             var stopwatch = Stopwatch.StartNew();
-            if (CheckPaths(opts.Source, opts.Target))
+            if (CheckSourcePath(opts.Source))
             {
                 var compressor = new Compressor(_cts.Token);
                 TokenRegistration(compressor.InnerToken);
@@ -74,7 +74,7 @@ namespace GPack
             return 1;
         }
 
-        private static  bool CheckPaths(string sourceFilePath, string targetFilePath)
+        private static  bool CheckSourcePath(string sourceFilePath)
         {
             var source = new FileInfo(sourceFilePath);
             if (!source.Exists)

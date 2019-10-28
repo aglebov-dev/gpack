@@ -4,12 +4,10 @@ using System.Threading;
 
 namespace GPack
 {
-    public class PackWriter: BaseType
+    public abstract class BaseWriter : BaseType
     {
-        public PackWriter(CancellationToken cancellationToken, Action<ProgressInfo, Exception> progressCallback)
-            : base(cancellationToken, progressCallback)
-        {
-        }
+        public BaseWriter(CancellationToken cancellationToken, Action<Exception> progressCallback)
+            : base(cancellationToken, progressCallback) { }
 
         public void Write(Stream stream, BlockingQueue writeQueue)
         {
@@ -19,11 +17,8 @@ namespace GPack
                 {
                     if (writeQueue.TryDequeue(out var value))
                     {
-                        var bytes = value.Bytes;
-                        stream.Write(bytes, 0, bytes.Length);
-
-                        _progressCallback?.Invoke(new ProgressInfo(bytes.Length), default);
-
+                        var data = GetBytes(value);
+                        stream.Write(data, 0, data.Length);
                     }
                     else if (writeQueue.IsDataReceptionCompleted && writeQueue.Count == 0)
                     {
@@ -37,9 +32,11 @@ namespace GPack
             }
             catch (Exception ex)
             {
-                _progressCallback?.Invoke(default, ex);
+                _exceptionCallback?.Invoke(ex);
                 _innerCancellationTokenSource.Cancel();
             }
         }
+
+        protected abstract byte[] GetBytes(ByteBlock block);
     }
 }

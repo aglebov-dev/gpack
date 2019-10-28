@@ -15,7 +15,6 @@ namespace GPack
             {
                 compressionStream.Write(data, 0, data.Length);
                 compressionStream.Dispose();
-
                 var compressedBytes = stream.ToArray();
 
                 return ByteBlock.Create(block.Index, compressedBytes, compressedBytes.Length);
@@ -25,17 +24,14 @@ namespace GPack
         public ByteBlock UnPack(ByteBlock block)
         {
             var data = ByteBlock.Extractdata(block);
-
+            
             using (var stream = new MemoryStream(data))
             using (var compressionStream = new GZipStream(stream, CompressionMode.Decompress))
             {
                 var bytes = new byte[Constants.FILE_READ_BUFFER_SIZE];
                 var length = compressionStream.Read(bytes, 0, bytes.Length);
 
-                var dataBytes = new byte[length];
-                Array.Copy(bytes, 0, dataBytes, 0, length);
-
-                return ByteBlock.Create(block.Index, dataBytes, length);
+                return ByteBlock.Create(block.Index, bytes, length);
             }
         }
     }

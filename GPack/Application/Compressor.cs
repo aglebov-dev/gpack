@@ -36,7 +36,7 @@ namespace GPack
             );
         }
 
-        private void ProgressHandler(ProgressInfo arg1, Exception exception)
+        private void ProgressHandler(Exception exception)
         {
             if (exception != null)
             {

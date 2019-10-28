@@ -30,7 +30,7 @@ namespace GPack
 
         private readonly Packager _packager;
 
-        public Exchanger(CancellationToken cancellationToken, Action<ProgressInfo, Exception> progressCallback) 
+        public Exchanger(CancellationToken cancellationToken, Action<Exception> progressCallback) 
             : base(cancellationToken, progressCallback)
         {
             _packager = new Packager();
@@ -38,10 +38,6 @@ namespace GPack
 
         public void BeginCompressExchangeAsync(BlockingQueue source, BlockingQueue target)
         {
-            var threads = Enumerable.Range(0, Constants.THREADS_COUNT)
-                .Select(x => new Thread(Exchange))
-                .ToArray();
-
             var sharedState = new SharedState
             {
                 Source = source,
@@ -49,24 +45,27 @@ namespace GPack
                 IsPack = true
             };
 
-            foreach (var thread in threads)
-            {
-                thread.Start(sharedState);
-            }
+            BeginWithState(sharedState);
         }
 
         public void BeginDecompressExchangeAsync(BlockingQueue source, BlockingQueue target)
         {
-            var threads = Enumerable.Range(0, Constants.THREADS_COUNT)
-                .Select(x => new Thread(Exchange))
-                .ToArray();
-
             var sharedState = new SharedState
             {
                 Source = source,
                 Target = target,
                 IsPack = false
             };
+
+            BeginWithState(sharedState);
+        }
+
+        private void BeginWithState(SharedState sharedState)
+        {
+            var threads = Enumerable.Range(0, Constants.THREADS_COUNT)
+               .Select(x => new Thread(Exchange))
+               .ToArray();
+
             foreach (var thread in threads)
             {
                 thread.Start(sharedState);
@@ -82,7 +81,7 @@ namespace GPack
             }
             catch (Exception ex)
             {
-                _progressCallback?.Invoke(default, ex);
+                _exceptionCallback?.Invoke(ex);
                 _innerCancellationTokenSource.Cancel();
             }
         }
