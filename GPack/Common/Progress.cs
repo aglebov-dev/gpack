@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace GPack
+namespace gpack.Common
 {
-    public class Progress
+    internal class Progress
     {
         public Exception Exception { get; private set; }
 

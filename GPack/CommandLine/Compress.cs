@@ -1,9 +1,9 @@
 ﻿using CommandLine;
 
-namespace GPack.CommandLine
+namespace gpack.CommandLine
 {
     [Verb("compress", HelpText = "Compress file")]
-    public class Compress
+    public class Compress: Command
     {
         [Value(0, MetaName = "source", Required = true, HelpText = "Source file path")]
         public string Source { get; set; }

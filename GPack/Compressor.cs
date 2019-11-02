@@ -1,11 +1,16 @@
-﻿using System;
+﻿using gpack.Common;
+using gpack.Exchange;
+using gpack.Queues;
+using gpack.Readers;
+using gpack.Writers;
 using System.IO;
 using System.Threading;
 
-namespace GPack
+namespace gpack
 {
-    public class Compressor
+    internal class Compressor
     {
+        private readonly Progress _progress;
         private readonly Reader _reader;
         private readonly PackWriter _packWriter;
         private readonly PackReader _packReader;
@@ -14,17 +19,16 @@ namespace GPack
         private readonly CancellationTokenSource _innerToken;
 
         public CancellationToken InnerToken => _innerToken.Token;
-        public Progress Progress { get;  }
+        public bool HasError => _progress.Exception != null;
 
         public Compressor(CancellationToken token)
         {
-            _reader = new Reader(token, ProgressHandler);
-            _writer = new Writer(token, ProgressHandler);
-            _packWriter = new PackWriter(token, ProgressHandler);
-            _packReader = new PackReader(token, ProgressHandler);
-            _exchanger = new Exchanger(token, ProgressHandler);
-
-            Progress = new Progress();
+            _progress = new Progress();
+            _reader = new Reader(token, _progress);
+            _writer = new Writer(token, _progress);
+            _packWriter = new PackWriter(token, _progress);
+            _packReader = new PackReader(token, _progress);
+            _exchanger = new Exchanger(token, _progress);
 
             _innerToken = CancellationTokenSource.CreateLinkedTokenSource
             (
@@ -36,21 +40,14 @@ namespace GPack
             );
         }
 
-        private void ProgressHandler(Exception exception)
-        {
-            if (exception != null)
-            {
-                Progress.Error(exception);
-            }
-        }
-
         public void Pack(string source, string target)
         {
             using (var readStream = File.OpenRead(source))
             using (var writeStream = File.OpenWrite(target))
             {
+                var compressedData = new ReadQueue();
                 var data = _reader.BeginReadAsync(readStream);
-                var compressedData = CompressDataAsync(data);
+                _exchanger.BeginCompressExchangeAsync(data, compressedData);
                 _packWriter.Write(writeStream, compressedData);
             }
         }
@@ -60,24 +57,11 @@ namespace GPack
             using (var readStream = File.OpenRead(source))
             using (var writeStream = File.OpenWrite(target))
             {
+                var result = new ReadQueue();
                 var data = _packReader.BeginReadAsync(readStream);
-                var decompressData = DecompressDataAsync(data);
-                _writer.Write(writeStream, decompressData);
+                _exchanger.BeginDecompressExchangeAsync(data, result);
+                _writer.Write(writeStream, result);
             }
-        }
-
-        private BlockingQueue CompressDataAsync(BlockingQueue source)
-        {
-            var result = new BlockingQueue();
-            _exchanger.BeginCompressExchangeAsync(source, result);
-            return result;
-        }
-
-        private BlockingQueue DecompressDataAsync(BlockingQueue source)
-        {
-            var result = new BlockingQueue();
-            _exchanger.BeginDecompressExchangeAsync(source, result);
-            return result;
         }
     }
 }

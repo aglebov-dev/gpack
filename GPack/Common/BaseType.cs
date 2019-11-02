@@ -1,20 +1,20 @@
-﻿using System;
+﻿using gpack.Common;
 using System.Threading;
 
-namespace GPack
+namespace gpack.Common
 {
-    public abstract class BaseType
+    internal abstract class BaseType
     {
         protected readonly CancellationToken _externalToken;
-        protected readonly Action<Exception> _exceptionCallback;
+        protected readonly Progress _progress;
         protected readonly CancellationTokenSource _innerCancellationTokenSource;
 
         public CancellationToken CancellationToken { get; }
 
-        public BaseType(CancellationToken cancellationToken, Action<Exception> progressCallback)
+        public BaseType(CancellationToken cancellationToken, Progress progress)
         {
             _externalToken = cancellationToken;
-            _exceptionCallback = progressCallback;
+            _progress = progress;
             _innerCancellationTokenSource = new CancellationTokenSource();
 
             CancellationToken = _innerCancellationTokenSource.Token;

@@ -1,9 +1,9 @@
 ﻿using CommandLine;
 
-namespace GPack.CommandLine
+namespace gpack.CommandLine
 {
     [Verb("decompress", HelpText = "Decompress file")]
-    public class Decompress
+    public class Decompress: Command
     {
         [Value(0, MetaName = "source", Required = true, HelpText = "Source file path")]
         public string Source { get; set; }
